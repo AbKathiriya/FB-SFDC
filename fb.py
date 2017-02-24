@@ -1,3 +1,8 @@
+'''
+#
+# To extend the token go to this url: https://developers.facebook.com/tools/debug/accesstoken/
+#
+'''
 import os
 import json
 import time
@@ -8,6 +13,7 @@ import datetime
 import httplib2
 import mimetypes
 import fb_config as fc
+import scikit_analysis as analyze
 from apiclient import errors
 from oauth2client import tools
 from apiclient import discovery
@@ -28,6 +34,7 @@ except ImportError:
 
 FACEBOOK_GRAPH_URL = "https://graph.facebook.com/"
 access_token = fc.access_token
+access_token_new = fc.access_token_new
 long_lived_token = fc.long_lived_token
 appid = fc.appid
 appsecret = fc.appsecret
@@ -83,7 +90,7 @@ def get_token():
     '''
     To generate long lived facebook access token.
     '''
-    fb = facebook.GraphAPI(access_token)
+    fb = facebook.GraphAPI(access_token_new)
     token = fb.extend_access_token(appid, appsecret)
     return token['access_token']
 
@@ -104,17 +111,27 @@ if __name__ == '__main__':
                 l = len(post['comments']['data'])
                 comment = post['comments']['data'][-1]
                 message.append("Last Comment by " + str(comment['from']['name']) + " : " +str(comment['message']))
+                result =  analyze.main(str(post['message']))
+                if result == 1:
+                    message.append("\n\nAnalysis : The analysis of this post suggests you should create a new ticket in SFDC. Please create a new ticket in database.")
+                else:
+                    message.append("\n\nAnalysis : The analysis of this post suggests that no need to create a new ticket in SFDC.")
                 msg = "\n".join(message)
-                gmail_send_msg('akashk@arista.com',msg)
-                print 'Change Detected'
+                print result
                 print msg
+                gmail_send_msg('akashk@arista.com',msg)
             else:
                 message.append("Post : " + str(post['message']))
-                msg = "\n".join(message)
-                msg = "\n".join(message)
-                gmail_send_msg('akashk@arista.com',msg)
                 print 'Change Detected'
+                result =  analyze.main(str(post['message']))
+                if result == 1:
+                    message.append("\n\nAnalysis : The analysis of this post suggests you should create a new ticket in SFDC. Please create a new ticket in database.")
+                else:
+                    message.append("\n\nAnalysis : The analysis of this post suggests that no need to create a new ticket in SFDC.")
+                msg = "\n".join(message)
+                print result
                 print msg
+                gmail_send_msg('akashk@arista.com',msg)
         else:
             print 'No change'
         time.sleep(5.0)
